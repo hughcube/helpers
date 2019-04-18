@@ -77,7 +77,13 @@ class HCheck
      */
     public static function isUtf8($string)
     {
-        return json_encode([$string]) !== '[null]';
+        if (null === $string){
+            return true;
+        }
+
+        $json = @json_encode([$string]);
+
+        return '[null]' !== $json && !empty($json);
 
         // $temp1 = @iconv("GBK", "UTF-8", $string);
         // $temp2 = @iconv("UTF-8", "GBK", $temp1);
