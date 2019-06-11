@@ -432,4 +432,24 @@ class HTree
 
         return $items;
     }
+
+    /**
+     * @param $id
+     * @return array|null
+     * [
+     *      'id' => 'id',
+     *      'level' => '级别',
+     *      'left' => '左值',
+     *      'right' => '右值',
+     *      'parent' => '父节点id',
+     * ]
+     */
+    public function getNodeIndex($id)
+    {
+        if (!isset($this->index[$id])){
+            return null;
+        }
+
+        return $this->index[$id];
+    }
 }
