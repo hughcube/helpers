@@ -90,6 +90,29 @@ class HTree
     }
 
     /**
+     * 设置 items
+     *
+     * @param $items
+     */
+    protected function setItems(array $items)
+    {
+        $this->index = $this->items = $this->tree = [];
+
+        $this->items = HArray::index($items, $this->idKey);
+        $this->buildIndex();
+    }
+
+    /**
+     * 获取items
+     *
+     * @return array
+     */
+    public function getItems()
+    {
+        return $this->items;
+    }
+
+    /**
      * 添加一个节点
      *
      * @param array|object $node 节点数据
@@ -174,6 +197,32 @@ class HTree
         }
 
         return null;
+    }
+
+    /**
+     * 获取某一节点的所有父节点
+     *
+     * @param string $nid 节点id
+     * @param bool $onlyId 是否只返回 id
+     * @return array
+     */
+    public function getParents($nid, $onlyId = false)
+    {
+        if (!isset($this->items[$nid])){
+            return null;
+        }
+
+        $parents = [];
+
+        foreach($this->index as $id => $item){
+            if ($item['left'] < $this->index[$nid]['left']
+                && $item['right'] > $this->index[$nid]['right']
+            ){
+                $parents = $onlyId ? $id : $this->items[$id];
+            }
+        }
+
+        return $parents;
     }
 
     /**
@@ -324,19 +373,6 @@ class HTree
     }
 
     /**
-     * 设置 items
-     *
-     * @param $items
-     */
-    protected function setItems(array $items)
-    {
-        $this->index = $this->items = $this->tree = [];
-
-        $this->items = HArray::index($items, $this->idKey);
-        $this->buildIndex();
-    }
-
-    /**
      * 添加一个节点
      *
      * @param $node
@@ -451,5 +487,44 @@ class HTree
         }
 
         return $this->index[$id];
+    }
+
+    /**
+     * 获取指定节点的level
+     *
+     * @param $id
+     * @return mixed|null
+     */
+    public function getNodeLevel($id)
+    {
+        $index = $this->getNodeIndex($id);
+
+        return isset($index['level']) ? $index['level'] : null;
+    }
+
+    /**
+     * 获取指定节点的left
+     *
+     * @param $id
+     * @return mixed|null
+     */
+    public function getNodeLeft($id)
+    {
+        $index = $this->getNodeIndex($id);
+
+        return isset($index['left']) ? $index['left'] : null;
+    }
+
+    /**
+     * 获取指定节点的right
+     *
+     * @param $id
+     * @return mixed|null
+     */
+    public function getNodeRight($id)
+    {
+        $index = $this->getNodeIndex($id);
+
+        return isset($index['right']) ? $index['right'] : null;
     }
 }
