@@ -498,7 +498,7 @@ class HCheck
             return false;
         }
 
-        if (null !== $min && (!is_numeric($max) || $min > $number)){
+        if (null !== $min && (!is_numeric($min) || $min > $number)){
             return false;
         }
 

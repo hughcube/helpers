@@ -62,6 +62,17 @@ class HTree
         $this->parentKey = $parentKey;
 
         $this->setItems($items);
+
+        /**
+         * 数据错误本来应该报错, 但是为了兼容之前的版本, 只能暂时清空数据
+         */
+        if (!$this->getIsValid()){
+            $this->indexTree
+                = $this->buildIndexInProcess
+                = $this->index
+                = $this->items
+                = [];
+        }
     }
 
     /**
@@ -87,6 +98,17 @@ class HTree
         }
 
         return $this->items[$id];
+    }
+
+    /**
+     * 是否存在某个节点数据
+     *
+     * @param string $id id
+     * @return bool
+     */
+    public function hasItem($id)
+    {
+        return null != $this->getItem($id);
     }
 
     /**
@@ -116,12 +138,13 @@ class HTree
      * 添加一个节点
      *
      * @param array|object $node 节点数据
-     * @param null $parent 添加到那个节点下面
      *
      * @return static
      */
-    public function addChild($node, $parent = null)
+    public function addChild($node)
     {
+        $parent = HArray::getValue($node, $this->parentKey);
+
         $this->addNote($node, $parent, true);
 
         return $this;
@@ -132,18 +155,22 @@ class HTree
      *
      * @param string $nid 节点id
      * @param bool $onlyId 是否只返回 id
-     * @param null $level 指定层级的, 未指定返回所有的子节点包括孙子节点或者以下
+     * @param null|integer $startLevel 往下多少级-起始, 为空不限制
+     * @param null|integer $endLevel 往下多少级-结束, 为空不限制
+     * @param bool $withSelf 结果是否包括自己
      * @return array
      */
-    public function getChildren($nid, $onlyId = false, $level = null)
+    public function getChildren(
+        $nid,
+        $onlyId = false,
+        $startLevel = null,
+        $endLevel = null,
+        $withSelf = false
+    )
     {
-        if (null !== $level && 0 == $level){
-            return [];
-        }
-
         $nodes = $parents = [];
 
-        // 先收集一次, 防止父 id 不存在不能被收集
+        /** 先收集一次, 防止父 id 不存在不能被收集 */
         foreach($this->items as $id => $item){
             if ($nid == HArray::getValue($item, $this->parentKey)){
                 $parents[] = $id;
@@ -152,21 +179,28 @@ class HTree
             }
         }
 
-        if (1 == $level){
-            return $nodes;
-        }
-
-        $level = null === $level ? null : $level + 1;
-
-        foreach($this->index as $id => $item){
-            foreach($parents as $parent){
-                if ($item['left'] > $this->index[$parent]['left']
+        foreach($parents as $parent){
+            foreach($this->index as $id => $item){
+                if (
+                    $item['left'] > $this->index[$parent]['left']
                     && $item['right'] < $this->index[$parent]['right']
-                    && (null === $level || $item['level'] - $this->index[$parent]['level'] <= $level)
                 ){
                     $nodes[$id] = ($onlyId ? $id : $this->items[$id]);
                 }
             }
+        }
+
+        foreach($nodes as $id => $node){
+            if (HCheck::isDigit($this->getNodeLevel($id), $startLevel, $endLevel)){
+                continue;
+            }
+
+            unset($nodes[$id]);
+        }
+
+        /** 是否返回自己本身 */
+        if ($withSelf && $this->hasItem($nid)){
+            $nodes[$nid] = ($onlyId ? $nid : $this->getItem($nid));
         }
 
         return $nodes;
@@ -177,20 +211,23 @@ class HTree
      *
      * @param string $nid 节点id
      * @param bool $onlyId 是否只返回 id
-     * @param null $level 指定层级的, 默认1返回上一级的父节点
+     * @param null|integer $level 取第几级父节点, 默认取上一级
      * @return int|mixed|null|string
      */
-    public function getParent($nid, $onlyId = false, $level = 1)
+    public function getParent($nid, $onlyId = false, $level = null)
     {
         if (!isset($this->items[$nid])){
             return null;
         }
 
+        $level = null === $level ? ($this->getNodeLevel($nid) - 1) : $level;
+
         $parent = null;
         foreach($this->index as $id => $item){
-            if ($item['left'] < $this->index[$nid]['left']
+            if (
+                $item['left'] < $this->index[$nid]['left']
                 && $item['right'] > $this->index[$nid]['right']
-                && $this->index[$nid]['level'] - $item['level'] == $level
+                && $item['level'] == $level
             ){
                 return $onlyId ? $id : $this->items[$id];
             }
@@ -204,22 +241,37 @@ class HTree
      *
      * @param string $nid 节点id
      * @param bool $onlyId 是否只返回 id
+     * @param null|integer $startLevel 往上多少级-起始, 为空不限制
+     * @param null|integer $endLevel 往上多少级-结束, 为空不限制
      * @return array
      */
-    public function getParents($nid, $onlyId = false)
+    public function getParents(
+        $nid,
+        $onlyId = false,
+        $startLevel = null,
+        $endLevel = null,
+        $withSelf = false
+    )
     {
-        if (!isset($this->items[$nid])){
+        if (!$this->hasItem($nid)){
             return null;
         }
 
         $parents = [];
 
         foreach($this->index as $id => $item){
-            if ($item['left'] < $this->index[$nid]['left']
+            if (
+                $item['left'] < $this->index[$nid]['left']
                 && $item['right'] > $this->index[$nid]['right']
+                && HCheck::isDigit($item['level'], $startLevel, $endLevel)
             ){
-                $parents = $onlyId ? $id : $this->items[$id];
+                $parents[$id] = ($onlyId ? $id : $this->items[$id]);
             }
+        }
+
+        /** 是否返回自己本身 */
+        if ($withSelf && $this->hasItem($nid)){
+            $parents[$nid] = ($onlyId ? $nid : $this->getItem($nid));
         }
 
         return $parents;

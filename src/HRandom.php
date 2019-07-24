@@ -89,8 +89,8 @@ class HRandom
     /**
      * 随机移出一个元素
      *
-     * @param array $array 需要删除元素的数组
-     * @return array|false
+     * @param array $array
+     * @return bool|mixed
      */
     public static function arrayRemove(array &$array)
     {
