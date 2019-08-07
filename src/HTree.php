@@ -253,11 +253,11 @@ class HTree
         $withSelf = false
     )
     {
-        if (!$this->hasItem($nid)){
-            return null;
-        }
-
         $parents = [];
+
+        if (!$this->hasItem($nid)){
+            return $parents;
+        }
 
         foreach($this->index as $id => $item){
             if (
