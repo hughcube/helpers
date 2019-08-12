@@ -32,10 +32,12 @@ class HTreeTest extends TestCase
     /**
      * @param HTree $tree
      * @depends testInstance
+     * @expectedException \InvalidArgumentException
      */
     public function testGetIsValid($tree)
     {
         $this->assertTrue($tree->getIsValid());
+
 
         $items = $this->getBadItems();
         $instance = HTree::instance($items, 'id', 'parent');
