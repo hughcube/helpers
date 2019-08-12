@@ -2,6 +2,8 @@
 
 namespace HughCube\Helpers;
 
+use InvalidArgumentException;
+
 class HTree
 {
     /**
@@ -52,9 +54,9 @@ class HTree
     protected $isValid = true;
 
     /**
-     * @param array $items
-     * @param $idkey
-     * @param $pkey
+     * @param array $items 构建树形结构的数组, 每个元素必需包含 id, parent 两个属性
+     * @param string $idkey id属性的名字
+     * @param string $parentKey parent属性的名字
      */
     protected function __construct(array $items, $idkey, $parentKey)
     {
@@ -63,15 +65,8 @@ class HTree
 
         $this->setItems($items);
 
-        /**
-         * 数据错误本来应该报错, 但是为了兼容之前的版本, 只能暂时清空数据
-         */
         if (!$this->getIsValid()){
-            $this->indexTree
-                = $this->buildIndexInProcess
-                = $this->index
-                = $this->items
-                = [];
+            throw new InvalidArgumentException('$items 不能构建成一个树形');
         }
     }
 
