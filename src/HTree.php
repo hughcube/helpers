@@ -7,6 +7,12 @@ use InvalidArgumentException;
 class HTree
 {
     /**
+     * 是否显示空子集
+     * @var bool
+     */
+    protected $isShowEmptyChild = true;
+
+    /**
      * @var array
      */
     protected $items = [];
@@ -68,6 +74,16 @@ class HTree
         if (!$this->getIsValid()){
             throw new InvalidArgumentException('$items 不能构建成一个树形');
         }
+    }
+
+    /**
+     * 设置是否显示空子集
+     * @param bool $isShowEmptyChild
+     * @return $this
+     */
+    public function setIsShowEmptyChild(bool $isShowEmptyChild){
+        $this->isShowEmptyChild = $isShowEmptyChild;
+        return $this;
     }
 
     /**
@@ -412,7 +428,11 @@ class HTree
         foreach($items as $id => $item){
             $node = null === $format ? $this->items[$id] : $format($this->items[$id]);
             $child = $this->recursiveGetTree($item['items'], $childrenKey, $format);
-            $child && $node[$childrenKey] = $child;
+            if(!$child){
+                $this->isShowEmptyChild && $node[$childrenKey] = $child;
+            }else{
+                $node[$childrenKey] = $child;
+            }
 
             $_[] = $node;
         }
