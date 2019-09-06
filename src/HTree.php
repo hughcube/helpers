@@ -303,11 +303,12 @@ class HTree
      *
      * @param string $childrenKey 子集的数组key
      * @param callable $format 格式化返回的元素
+     * @param boolean $keepEmptyChildrenKey 是否保留空的ChildrenKey
      * @return array
      */
-    public function getTree($childrenKey = 'items', callable $format = null)
+    public function getTree($childrenKey = 'items', callable $format = null, $keepEmptyChildrenKey = true)
     {
-        return $this->recursiveGetTree($this->indexTree, $childrenKey, $format);
+        return $this->recursiveGetTree($this->indexTree, $childrenKey, $format, $keepEmptyChildrenKey);
     }
 
     /**
@@ -402,7 +403,7 @@ class HTree
      * @param $items
      * @param callable $callable
      */
-    protected function recursiveGetTree($items, $childrenKey, $format)
+    protected function recursiveGetTree($items, $childrenKey, $format, $keepEmptyChildrenKey)
     {
         if (empty($items)){
             return [];
@@ -411,8 +412,11 @@ class HTree
         $_ = [];
         foreach($items as $id => $item){
             $node = null === $format ? $this->items[$id] : $format($this->items[$id]);
-            $child = $this->recursiveGetTree($item['items'], $childrenKey, $format);
-            $child && $node[$childrenKey] = $child;
+
+            $children = $this->recursiveGetTree($item['items'], $childrenKey, $format, $keepEmptyChildrenKey);
+            if (!empty($children) || $keepEmptyChildrenKey){
+                $node[$childrenKey] = $children;
+            }
 
             $_[] = $node;
         }
