@@ -411,7 +411,8 @@ class HTree
         $_ = [];
         foreach($items as $id => $item){
             $node = null === $format ? $this->items[$id] : $format($this->items[$id]);
-            $node[$childrenKey] = $this->recursiveGetTree($item['items'], $childrenKey, $format);
+            $child = $this->recursiveGetTree($item['items'], $childrenKey, $format);
+            $child && $node[$childrenKey] = $child;
 
             $_[] = $node;
         }
