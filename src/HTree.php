@@ -436,7 +436,7 @@ class HTree
         $id = HArray::getValue($node, $this->idKey);
         $this->items[$id] = $node;
 
-        if (empty($parent) || !isset($this->index[$parent])){
+        if (!isset($this->index[$parent])){
             $plevel = $pleft = 0;
         }else{
             $pleft = $this->index[$parent]['left'];
